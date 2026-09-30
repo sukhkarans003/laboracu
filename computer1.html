@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Computer Science Lab Management System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <!-- Added jsPDF and AutoTable for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+
+    <link rel="stylesheet" href="assets/css/pages/autologin.css">
+</head>
+
+<body data-department="COMP">
+
+    <!-- 1. COMPUTER SCIENCE LAB SELECTION SCREEN -->
+    <section id="lab-selection">
+        <div class="lab-select-header">
+            <div
+                style="max-width: 1200px; margin: 0 auto; width: 90%; display: flex; justify-content: space-between; align-items: center;">
+                <div style="text-align: left;">
+                    <h2 id="lab-sel-dept-name">Computer Science</h2>
+                    <p>Select a specific lab or login as Department HOD.</p>
+                </div>
+                <button onclick="window.location.href='demo.html'" class="btn-action-nav"
+                    style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3);">
+                    ← Change Dept
+                </button>
+            </div>
+        </div>
+
+        <div class="lab-actions-nav">
+            <button onclick="openLoginModal('hod')" class="btn-action-nav hod">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path
+                        d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4">
+                    </path>
+                </svg>
+                HOD Login
+            </button>
+            <button onclick="openLoginModal('oa')" class="btn-action-nav oa">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path
+                        d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z">
+                    </path>
+                </svg>
+                OA Login
+            </button>
+            <button onclick="openLoginModal('placement')" class="btn-action-nav placement">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path
+                        d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z">
+                    </path>
+                </svg>
+                Placement Login
+            </button>
+        </div>
+
+        <div class="labs-grid" id="labs-container"></div>
+    </section>
+
+    <!-- 2. LOGIN MODAL -->
+    <div id="login-modal">
+        <div class="login-card">
+            <h3 id="login-title" style="margin-bottom: 20px; font-size: 20px; font-weight: 800; color: #0f172a;">Login
+            </h3>
+            <form onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label style="text-align: left;">User ID</label>
+                    <input type="text" id="login-user" class="form-control" placeholder="Enter ID" required>
+                </div>
+                <div class="form-group">
+                    <label style="text-align: left;">Password</label>
+                    <input type="password" id="login-pass" class="form-control" placeholder="Enter Password" required>
+                </div>
+                <p id="login-error" style="color: var(--danger); font-size: 12px; margin-bottom: 15px; display: none;">
+                    Invalid Credentials!</p>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="submit" class="btn btn-primary"
+                        style="flex: 1; justify-content: center; padding: 10px;">Login</button>
+                    <button type="button" onclick="closeLoginModal()" class="btn"
+                        style="background: #f1f5f9; color: #475569;">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- HIDDEN INPUT FOR FILE UPLOADS -->
+    <input type="file" id="hidden-file-upload" class="hidden" accept=".pdf, image/*">
+
+    <!-- UPLOAD CONFIRMATION MODAL -->
+    <div id="upload-confirm-modal" class="modal center-modal">
+        <div class="modal-content center-modal">
+            <h3 style="margin-bottom: 20px; font-size: 18px; text-align: center;">Confirm Upload</h3>
+            <p style="text-align: center; margin-bottom: 30px; color: #475569;">Do you want to <strong>Save</strong> or
+                <strong>Delete</strong> this document?
+            </p>
+            <div style="display: flex; gap: 15px; justify-content: center;">
+                <button onclick="confirmUploadAction('delete')" class="btn"
+                    style="background: #fee2e2; color: #991b1b; border-color: #fecaca; flex:1;">Delete (Cancel)</button>
+                <button onclick="confirmUploadAction('save')" class="btn btn-primary" style="flex:1;">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. MAIN APP SECTION -->
+    <section id="app-section">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <div class="brand">
+                <div class="user-avatar-wrapper">
+                    <img id="sidebar-user-photo"
+                        src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOTQ5M2I4IHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMjAgMjF2MkE1IDUgM 0ADQTgtOUExNTEgNSAwIDQ4LTU 8nYybS0xMUEB2MmEyIDI  M 0 8MDIgMmgxNmEyIDI  M 0 8MDItMnYtMiIvPjwvc3ZnPg=="
+                        class="user-avatar" alt="User" loading="lazy" decoding="async">
+                </div>
+                <span id="sidebar-user-name">User Name</span>
+                <span id="sidebar-role">Role</span>
+            </div>
+
+            <ul class="nav-links">
+                <li class="nav-item">
+                    <a class="nav-link active" id="nav-dashboard" onclick="showSection('dashboard', this)">
+                        <div class="nav-link-content"><span class="nav-icon">📊</span> <span>Dashboard</span></div>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="nav-inventory" onclick="showSection('inventory', this)">
+                        <div class="nav-link-content"><span class="nav-icon">📦</span> <span>Inventory</span></div>
+                    </a>
+                </li>
+
+                <!-- LAB DETAILS SECTION (ADMIN ONLY) -->
+                <li class="nav-item admin-only" id="nav-lab-details-item">
+                    <a class="nav-link" id="nav-lab-details" onclick="showSection('lab-details', this)">
+                        <div class="nav-link-content"><span class="nav-icon">📑</span> <span>Lab Details</span></div>
+                    </a>
+                </li>
+
+                <!-- PARTICLES SECTION (DIRECT LINK NOW) -->
+                <li class="nav-item">
+                    <a class="nav-link" id="nav-particulars" onclick="showSection('particulars', this)">
+                        <div class="nav-link-content"><span class="nav-icon">📋</span> <span>Particulars</span></div>
+                    </a>
+                </li>
+
+                <!-- INSIDE RECORDS -->
+                <li class="nav-item">
+                    <a class="nav-link" id="nav-inside-records" onclick="showSection('inside-records', this)">
+                        <div class="nav-link-content"><span class="nav-icon">📁</span> <span>Lab Inside Record</span>
+                        </div>
+                    </a>
+                </li>
+
+                <!-- REPAIR DATA SECTION -->
+                <li class="nav-item">
+                    <a class="nav-link" id="nav-repair-data" onclick="showSection('repair-data', this)">
+                        <div class="nav-link-content"><span class="nav-icon">🔧</span> <span>Repair Data</span></div>
+                    </a>
+                </li>
+
+                <!-- STOCK REGISTER SECTION (NEW) -->
+                <li class="nav-item">
+                    <a class="nav-link" id="nav-stock-register" onclick="showSection('stock-register', this)">
+                        <div class="nav-link-content"><span class="nav-icon">📓</span> <span>Stock Register</span></div>
+                    </a>
+                </li>
+
+                <!-- LAB PHOTOS SECTION -->
+                <li class="nav-item" id="nav-lab-photos-item">
+                    <a class="nav-link" onclick="toggleSidebarDropdown('photos-dropdown', this)">
+                        <div class="nav-link-content"><span class="nav-icon">📷</span> <span>Lab Media</span></div>
+                        <svg class="dropdown-arrow" width="16" height="16" fill="none" stroke="currentColor"
+                            stroke-width="2" viewBox="0 0 24 24">
+                            <path d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </a>
+                    <ul id="photos-dropdown" class="nav-dropdown">
+                        <li>
+                            <a class="nav-link sub-link" onclick="showLabPhotosSection('photo', this)">Lab Photo</a>
+                        </li>
+                        <li>
+                            <a class="nav-link sub-link" onclick="showLabPhotosSection('video', this)">Lab Video</a>
+                        </li>
+                    </ul>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" id="nav-messages" onclick="showSection('messages', this)">
+                        <div class="nav-link-content"><span class="nav-icon">✉️</span> <span>Messages</span></div>
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" id="nav-profile" onclick="showSection('profile', this)">
+                        <div class="nav-link-content"><span class="nav-icon">👤</span> <span>My Profile</span></div>
+                    </a>
+                </li>
+            </ul>
+
+            <button onclick="openResetPasswordModal()" class="btn-reset-pass"> Reset Password</button>
+            <button onclick="logout()" class="btn-logout">Logout</button>
+        </nav>
+
+        <!-- Content -->
+        <main id="main-content-area">
+
+            <header>
+                <div class="header-title">
+                    <div>
+                        <h2 id="page-title">Dashboard</h2>
+                        <div class="header-subtitle" id="header-lab-info">Lab Info</div>
+                    </div>
+                </div>
+
+                <div class="header-right-group">
+                    <div class="header-notif-wrapper" onclick="openNotifications()" title="Notifications">
+                        <span>🔔 Notifications</span>
+                        <span id="notif-badge">0</span>
+                    </div>
+
+                    <div id="dept-switcher" class="hidden" style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 13px; font-weight: 600; color: #64748b;">Managing:</span>
+                        <select id="lab-switch-select" class="form-control" style="width: 180px;"
+                            onchange="switchLabView(this.value)"></select>
+                    </div>
+                </div>
+            </header>
+
+            <!-- DASHBOARD -->
+            <section id="dashboard" class="main-content active">
+                <div class="dashboard-header">
+                    <div>
+                        <p id="welcome-msg">Manage your laboratory resources efficiently.</p>
+                    </div>
+                    <div style="font-size: 12px; color: #64748b;">
+                        <span id="current-date-display"></span>
+                    </div>
+                </div>
+
+                <div class="quick-actions-bar">
+                    <div class="qa-title">⚡ Quick Actions</div>
+                    <div class="qa-buttons">
+                        <button onclick="showSection('inventory', document.getElementById('nav-inventory'))"
+                            class="btn btn-primary">
+                            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"
+                                viewBox="0 0 24 24">
+                                <path
+                                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z">
+                                </path>
+                            </svg>
+                            Inventory
+                        </button>
+                        <!-- REMOVED FROM DASHBOARD FOR INSTRUCTORS, HIDDEN VIA CSS CLASS 'admin-only' -->
+                        <button id="btn-post-notice-dash" class="btn admin-only hidden" onclick="openNoticeModal()">
+                            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"
+                                viewBox="0 0 24 24">
+                                <path
+                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z">
+                                </path>
+                            </svg>
+                            Post Notice
+                        </button>
+                    </div>
+                </div>
+
+                <div class="dashboard-top-wrapper">
+                    <div class="stats-column">
+                        <div class="stat-card">
+                            <div class="stat-info">
+                                <div class="stat-label">Inventory Items</div>
+                                <div class="stat-val" id="stat-inv-count">0</div>
+                            </div>
+                            <div class="stat-icon-bg" style="background:#eff6ff; color:#dc2626;">📦</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-info">
+                                <div class="stat-label">Total PDFs</div>
+                                <div class="stat-val" id="stat-pdf-count">0</div>
+                            </div>
+                            <div class="stat-icon-bg" style="background:#f3e8ff; color:#9333ea;">📑</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-info">
+                                <div class="stat-label">Total Particulars</div>
+                                <div class="stat-val" id="stat-particulars-count">0</div>
+                            </div>
+                            <div class="stat-icon-bg" style="background:#fef3c7; color:#d97706;">📋</div>
+                        </div>
+                    </div>
+
+                    <div class="notice-section">
+                        <div class="notice-header">
+                            <div class="notice-title">📢 Notice Board</div>
+                        </div>
+                        <div id="notice-list" class="notice-list">
+                            <div class="no-notice">No notices.</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PARTICLES SECTION (UPDATED: NEW ACTION COLUMN FOR EDIT) -->
+            <section id="particulars" class="main-content">
+                <div class="table-container">
+                    <div class="table-header">
+                        <div class="table-left-actions">
+                            <span style="font-size:12px; color:#64748b;">(Inside Display)</span>
+                        </div>
+                        <div style="display: flex; gap: 10px;">
+                            <button class="btn btn-primary admin-only" onclick="openModal('particularItemModal')">+ Add
+                                New Record</button>
+                            <div class="search-bar">
+                                <input type="text" id="search-particulars" class="search-input"
+                                    placeholder="Search by Item Name..." onkeyup="filterParticulars()">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="padding: 0 20px 20px 20px; overflow-x: auto;">
+                        <table id="particulars-table" class="excel-table" style="min-width: 900px;">
+                            <thead>
+                                <tr>
+                                    <th class="text-center" style="width: 50px;">Sr.</th>
+                                    <th style="width: 250px;">Item Name</th>
+                                    <th style="width: 150px; text-align: center;">Document</th>
+                                    <!-- NEW COLUMN: Action (Edit Name) -->
+                                    <th style="width: 100px; text-align: center;">Action</th>
+                                    <th class="text-center" style="width: 100px;">Contact</th>
+                                </tr>
+                            </thead>
+                            <tbody id="particulars-tbody"></tbody>
+                        </table>
+                    </div>
+                    <!-- FOOTER DISCLAIMER (UPDATED) -->
+                    <div class="section-footer" id="particulars-footer">
+                        Please upload carefully. Once a file is uploaded, it will be considered final. For any changes,
+                        contact HOD or OA.
+                    </div>
+                </div>
+            </section>
+
+            <!-- LAB INSIDE RECORDS (UPDATED) -->
+            <section id="inside-records" class="main-content">
+                <div class="table-container">
+                    <div class="table-header">
+                        <div class="table-left-actions">
+                            <span style="font-size:12px; color:#64748b;">(Lab Inside Record)</span>
+                        </div>
+                        <div style="display: flex; gap: 10px;">
+                            <!-- ADDED BUTTON -->
+                            <button class="btn btn-primary" onclick="openModal('insideRecordModal')">+ Add New
+                                Record</button>
+                            <div class="search-bar">
+                                <input type="text" id="search-records" class="search-input" placeholder="Search..."
+                                    onkeyup="filterRecords()">
+                            </div>
+                        </div>
+                    </div>
+                    <div style="padding: 0 20px 20px 20px; overflow-x: auto;">
+                        <table id="records-table" class="excel-table" style="min-width: 900px;">
+                            <thead>
+                                <tr>
+                                    <th class="text-center" style="width: 50px;">Sr.</th>
+                                    <th style="width: 250px;">Item Name</th>
+                                    <th style="width: 150px; text-align: center;">Document</th>
+                                    <th style="width: 100px; text-align: center;">Action</th> <!-- NEW COLUMN -->
+                                    <th class="text-center" style="width: 100px;">Contact</th> <!-- RENAMED -->
+                                </tr>
+                            </thead>
+                            <tbody id="records-tbody"></tbody>
+                        </table>
+                    </div>
+                    <!-- FOOTER DISCLAIMER (UPDATED) -->
+                    <div class="section-footer" id="inside-records-footer">
+                        Please upload carefully. Once a file is uploaded, it will be considered final. For any changes,
+                        contact HOD or OA.
+                    </div>
+                </div>
+            </section>
+
+            <!-- REPAIR DATA SECTION (UPDATED: REQUEST NO COLUMN, SEARCH, DOWNLOAD, FILE UPLOAD) -->
+            <section id="repair-data" class="main-content">
+                <div class="table-container">
+                    <div class="table-header">
+                        <div class="table-left-actions">
+                            <span style="font-size:12px; color:#64748b;">Manage Repair Items</span>
+                        </div>
+                        <div style="display: flex; gap: 10px;">
+                            <!-- ADD BUTTON ADDED -->
+                            <button class="btn btn-primary" onclick="openRepairItemModal()">+ Add New Item</button>
+                            <!-- NEW SEARCH BAR -->
+                            <div class="search-bar">
+                                <input type="text" id="search-repair" class="search-input"
+                                    placeholder="Search Item, Vendor..." onkeyup="filterRepair()">
+                            </div>
+                            <!-- NEW DOWNLOAD DROPDOWN -->
+                            <div class="btn-download-container">
+                                <div class="btn-download-group">
+                                    <button class="btn"
+                                        style="background: white; border: 1px solid #cbd5e1; color: #475569;"
+                                        onclick="toggleDownloadOptions('repair')">
+                                        Download ▼
+                                    </button>
+                                </div>
+                                <div id="repair-download-options" class="download-options">
+                                    <div class="download-item"
+                                        onclick="downloadTablePDF('repair-table', 'Repair_Data.pdf')">
+                                        <span>📄 Download PDF</span>
+                                    </div>
+                                    <div class="download-item"
+                                        onclick="downloadExcel('repair-table', 'Repair_Data.xlsx')">
+                                        <span>📊 Download Excel</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- REPAIR TABLE -->
+                    <div style="padding: 0 20px 20px 20px; overflow-x: auto;">
+                        <table id="repair-table" class="excel-table" style="min-width: 1000px;">
+                            <thead>
+                                <tr>
+                                    <th class="text-center" style="width: 60px;">SR. No</th>
+                                    <th>Item Name</th>
+                                    <!-- REQUEST NO COLUMN -->
+                                    <th style="width: 120px;">Request No</th>
+                                    <th>Bill No</th>
+                                    <th>Vendor Name</th>
+                                    <th>Attachment</th> <!-- NEW: Show File Here -->
+                                    <th class="text-center">Warranty</th>
+                                    <th class="text-right">Price</th>
+                                    <th>Serial No</th>
+                                    <th>Date</th>
+                                    <th class="text-center">Qty</th>
+                                    <th class="text-center admin-only" style="width: 100px;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="repair-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- STOCK REGISTER SECTION (NEW) -->
+            <section id="stock-register" class="main-content">
+                <div class="table-container">
+                    <div class="table-header">
+                        <div class="table-left-actions">
+                            <button class="btn btn-primary" onclick="openModal('stockItemModal')">+ Add New
+                                Entry</button>
+                        </div>
+                        <div style="display: flex; gap: 10px;">
+                            <div class="search-bar">
+                                <input type="text" id="search-stock" class="search-input"
+                                    placeholder="Search by Article..." onkeyup="filterStock()">
+                            </div>
+
+                            <!-- DOWNLOAD DROPDOWN -->
+                            <div class="btn-download-container">
+                                <div class="btn-download-group">
+                                    <button class="btn"
+                                        style="background: white; border: 1px solid #cbd5e1; color: #475569;"
+                                        onclick="toggleDownloadOptions('stock')">
+                                        Download ▼
+                                    </button>
+                                </div>
+                                <div id="stock-download-options" class="download-options">
+                                    <div class="download-item"
+                                        onclick="downloadTablePDF('stock-table', 'Stock_Register.pdf')">
+                                        <span>📄 Download PDF</span>
+                                    </div>
+                                    <div class="download-item"
+                                        onclick="downloadExcel('stock-table', 'Stock_Register.xlsx')">
+                                        <span>📊 Download Excel</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="padding: 0 20px 20px 20px; overflow-x: auto;">
+                        <table id="stock-table" class="excel-table">
+                            <thead>
+                                <tr>
+                                    <th class="text-center" style="width: 50px;">Sr.</th>
+                                    <th style="width: 120px;">Date</th>
+                                    <th style="width: 200px;">Name of Article</th>
+                                    <th style="width: 200px;">Particulars</th>
+                                    <th style="width: 100px;">Folio</th>
+                                    <th>Remarks</th>
+                                    <th class="text-center admin-only" style="width: 100px;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="stock-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- LAB DETAILS SECTION (UPDATED: REMOVED APPARATUS) -->
+            <section id="lab-details" class="main-content">
+                <div class="table-container">
+                    <div class="table-header">
+                        <div class="table-left-actions">
+                            <span style="font-size:12px; color:#64748b;">Manage Documents for Inventory Items</span>
+                        </div>
+                        <div class="search-bar">
+                            <input type="text" id="search-lab-details" class="search-input"
+                                placeholder="Search by Item Name..." onkeyup="filterLabDetails()">
+                        </div>
+                    </div>
+                    <!-- Direct Upload Interface -->
+                    <div style="padding: 0 20px 20px 20px; overflow-x: auto;">
+                        <table id="lab-details-table" class="excel-table" style="min-width: 900px;">
+                            <thead>
+                                <tr>
+                                    <th class="text-center" style="width: 60px;">S.No</th>
+                                    <th style="min-width: 200px;">Name of Item</th>
+                                    <th style="width: 200px; text-align: center;">Purchase Order</th>
+                                    <th style="width: 200px; text-align: center;">Bill</th>
+                                    <!-- APPARATUS COLUMN REMOVED PER REQUEST -->
+                                    <th class="text-center admin-only" style="width: 100px;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lab-details-tbody"></tbody>
+                        </table>
+                    </div>
+                    <!-- FOOTER DISCLAIMER (UPDATED) -->
+                    <div class="section-footer" id="lab-details-footer">
+                        Please upload carefully. Once a file is uploaded, it will be considered final. For any changes,
+                        contact HOD or OA.
+                    </div>
+                </div>
+            </section>
+
+            <!-- LAB PHOTOS SECTION -->
+            <section id="lab-photos" class="main-content">
+                <div class="table-container">
+                    <div class="table-header">
+                        <div style="display:flex; flex-direction:column; gap:5px;">
+                            <h3 id="lab-photos-title">Lab Equipment Gallery</h3>
+                        </div>
+                        <button class="btn btn-primary" onclick="openModal('labPhotoModal')">+ Upload
+                            Photo/Video</button>
+                    </div>
+                    <div class="lab-photos-grid" id="lab-photos-container">
+                        <!-- Injected via JS -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- MESSAGES SECTION -->
+            <section id="messages" class="main-content">
+                <div style="margin-bottom: 15px;">
+                    <button id="tab-inbox" class="btn" style="background: var(--primary-color); color: white;"
+                        onclick="switchMessageTab('inbox')">📥 Inbox</button>
+                    <button id="tab-sent" class="btn"
+                        style="background: white; border: 1px solid #cbd5e1; color: #475569;"
+                        onclick="switchMessageTab('sent')">📤 Sent</button>
+                </div>
+
+                <div class="messages-layout">
+                    <div id="message-compose-container">
+                        <div class="table-container">
+                            <div class="table-header">
+                                <h3 id="compose-title">📝 Compose Message</h3>
+                            </div>
+                            <div style="padding: 20px;">
+                                <form onsubmit="handleSendMessage(event)">
+                                    <div class="form-group" style="margin-bottom: 15px;">
+                                        <label>Send To</label>
+                                        <select id="msg-recipient" class="form-control"></select>
+                                    </div>
+                                    <div class="form-group" style="margin-bottom: 15px;">
+                                        <label>Subject</label>
+                                        <input type="text" id="msg-subject" class="form-control"
+                                            placeholder="Enter subject..." required>
+                                    </div>
+                                    <div class="form-group"
+                                        style="margin-bottom: 15px; flex: 1; display: flex; flex-direction: column;">
+                                        <label>Message</label>
+                                        <textarea id="msg-body" class="form-control"
+                                            placeholder="Type your message here..." required></textarea>
+                                    </div>
+                                    <div class="form-group" style="margin-bottom: 15px;">
+                                        <label>Attachment (PDF/JPG)</label>
+                                        <input type="file" id="msg-file" class="form-control" accept=".pdf, image/*">
+                                    </div>
+                                    <button type="submit" class="btn btn-primary"
+                                        style="width: 100%; justify-content: center;">
+                                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
+                                            viewBox="0 0 24 24"></svg>
+                                        Send Message
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="table-container" style="height: 100%; display: flex; flex-direction: column;">
+                            <div class="table-header">
+                                <h3 id="message-list-title">📨 Inbox</h3>
+                            </div>
+                            <div id="message-history-list" class="scrollable-message-list"
+                                style="padding: 20px; flex: 1;">
+                                <div style="text-align: center; color: #94a3b8; margin-top: 20px;">No messages found.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- INVENTORY (UPDATED COLUMNS & MANDATORY FIELDS) -->
+            <section id="inventory" class="main-content">
+                <div class="table-container">
+                    <div class="table-header">
+                        <div class="table-left-actions">
+                            <button class="btn btn-primary admin-only" onclick="openModal('itemModal')">+ Add New
+                                Item</button>
+                        </div>
+                        <div style="display: flex; gap: 10px;">
+                            <div class="search-bar">
+                                <input type="text" id="search-inventory" class="search-input"
+                                    placeholder="Search by Name, Bill No, Supplier..." onkeyup="filterInventory()">
+                            </div>
+
+                            <!-- DOWNLOAD DROPDOWN -->
+                            <div class="btn-download-container">
+                                <div class="btn-download-group">
+                                    <button class="btn"
+                                        style="background: white; border: 1px solid #cbd5e1; color: #475569;"
+                                        onclick="toggleDownloadOptions('inventory')">
+                                        Download ▼
+                                    </button>
+                                </div>
+                                <div id="inventory-download-options" class="download-options">
+                                    <div class="download-item"
+                                        onclick="downloadTablePDF('inventory-table', 'Inventory_Data.pdf')">
+                                        <span>📄 Download PDF</span>
+                                    </div>
+                                    <div class="download-item"
+                                        onclick="downloadExcel('inventory-table', 'Inventory_Data.xlsx')">
+                                        <span>📊 Download Excel</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="padding: 0 20px 20px 20px; overflow-x: auto;">
+                        <table id="inventory-table" class="excel-table">
+                            <thead>
+                                <tr>
+                                    <th class="text-center" style="width: 50px;">Sr.</th>
+                                    <th style="width: 180px;">Item Name</th>
+                                    <th style="width: 150px;">PO No</th>
+                                    <th style="width: 120px;">Folio No</th> <!-- ADDED FOLIO NO -->
+                                    <th>Bill Date</th>
+                                    <th>Bill No</th>
+                                    <th class="text-center" style="width: 70px;">Qty</th>
+                                    <th class="text-right" style="width: 100px;">Amount</th>
+                                    <th>Supplier Name</th>
+                                    <th>Company</th>
+                                    <th class="text-center admin-only" style="width: 100px;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PROFILE SECTION (UPDATED FIELDS BASED ON SCREENSHOT) -->
+            <section id="profile" class="main-content">
+                <div class="profile-wrapper">
+                    <!-- VIEW MODE CONTAINER -->
+                    <div id="profile-view-container">
+                        <div
+                            style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
+                            <h3 style="font-size: 20px; font-weight: 700; color: #0f172a;">My Profile</h3>
+                            <button onclick="toggleProfileMode('edit')" class="btn btn-primary">
+                                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"
+                                    viewBox="0 0 24 24">
+                                    <path
+                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z">
+                                    </path>
+                                </svg>
+                                Edit Details
+                            </button>
+                        </div>
+                        <div class="profile-id-card">
+                            <div class="profile-card-header"></div>
+                            <div class="profile-card-body">
+                                <div class="profile-card-photo-container">
+                                    <img id="view-profile-photo"
+                                        src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOTQ5M2I4IHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVj0icm91bmQiPjxwYXRoIGQ9Ik0yMCAyMXYyQTUgNSAwID.8LTU 8nYybS0xMUEB2MmEyIDI  M 0 8MDIgMmgxNmEyIDI  M 0 8MDItMnYtMiIvPjwvc3ZnPg=="
+                                        class="profile-card-photo" alt="Profile" loading="lazy" decoding="async">
+                                </div>
+                                <h2 id="profile-card-name-text" class="profile-card-name">User Name</h2>
+                                <div id="profile-card-role-text" class="profile-card-role">Role</div>
+                                <div class="profile-details-grid" id="profile-details-grid">
+                                    <!-- Content injected via JS -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- EDIT MODE CONTAINER (UPDATED FIELDS) -->
+                    <div id="profile-form-container" class="hidden">
+                        <div class="table-header"
+                            style="background:transparent; padding: 0 0 15px 0; border-bottom: none;">
+                            <h3 id="profile-form-title">Edit My Profile</h3>
+                            <p style="font-size: 12px; color: #64748b;">Update your details below. Max photo size: 50KB.
+                            </p>
+                        </div>
+                        <form id="profileForm" onsubmit="handleSaveProfile(event)">
+                            <div class="form-group full-width" style="margin-bottom: 20px; text-align: center;">
+                                <label style="margin-bottom: 8px; display: block; font-weight: 700;">Profile
+                                    Photo</label>
+                                <input type="file" id="p_photo" style="display: none;" accept="image/*">
+                                <div class="photo-upload-wrapper" onclick="document.getElementById('p_photo').click()">
+                                    <img id="photo-preview-img"
+                                        src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOTQ5M2I4IHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVj0icm91bmQiPjxwYXRoIGQ9Ik0yMCAyMXYyQTUgNSAwID.8LTU 8nYybS0xMUEB2MmEyIDI  M 0 8MDIgMmgxNmEyIDI  M 0 8MDItMnYtMiIvPjwvc3ZnPg=="
+                                        style="display: none; width:100%; height:100%; object-fit:cover; border-radius:50%;" loading="lazy" decoding="async">
+                                    <span id="photo-placeholder-icon" class="photo-upload-placeholder">📷</span>
+                                </div>
+                                <small style="color: #94a3b8;">Click image to change</small>
+                            </div>
+
+                            <div class="profile-section-header">Personal Information</div>
+                            <div class="profile-grid">
+                                <div class="form-group"><label>Name</label><input type="text" id="p_name"
+                                        class="form-control" required></div>
+                                <div class="form-group"><label>DOB</label><input type="date" id="p_dob"
+                                        class="form-control"></div>
+                                <div class="form-group"><label>Gender</label>
+                                    <select id="p_gender" class="form-control">
+                                        <option value="Male">Male</option>
+                                        <option value="Female">Female</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+                                <div class="form-group"><label>Blood Group</label><input type="text" id="p_blood"
+                                        class="form-control"></div>
+                                <div class="form-group full-width"><label>Permanent Address</label><textarea
+                                        id="p_permanent_address" class="form-control"></textarea></div>
+                            </div>
+
+                            <div class="profile-section-header">Contact Information</div>
+                            <div class="profile-grid">
+                                <div class="form-group"><label>Mobile</label><input type="tel" id="p_mobile"
+                                        class="form-control"></div>
+                                <div class="form-group"><label>Email</label><input type="email" id="p_email"
+                                        class="form-control"></div>
+                            </div>
+
+                            <div style="margin-top: 20px; text-align: right;">
+                                <button type="button" onclick="toggleProfileMode('view')" class="btn"
+                                    style="background: #e2e8f0; color: #475569; margin-right: 10px;">Cancel</button>
+                                <button type="submit" class="btn btn-primary">Save Profile</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </section>
+
+    <!-- MODALS -->
+    <div id="notifications-modal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3>🔔 Notifications</h3>
+                <button class="close-btn" onclick="closeModal('notifications-modal')">&times;</button>
+            </div>
+            <div id="notif-list"
+                style="max-height: 60vh; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;">
+                <div style="text-align: center; color: #94a3b8; padding: 20px;">No new notifications.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- INCOMING MESSAGE POPUP MODAL -->
+    <div id="incoming-msg-modal" class="modal">
+        <div class="modal-content center-modal">
+            <div class="modal-header">
+                <h3 style="color:var(--primary-color); display:flex; align-items:center; gap:8px;">📩 New Message!</h3>
+                <button class="close-btn" onclick="closeModal('incoming-msg-modal')">&times;</button>
+            </div>
+            <div id="incoming-msg-content" style="font-size:14px; color:#334155; line-height:1.6;">
+                <!-- Content injected via JS -->
+            </div>
+            <div style="margin-top:20px; text-align:right;">
+                <button class="btn btn-primary"
+                    onclick="closeModal('incoming-msg-modal'); showSection('messages', document.getElementById('nav-messages'))">Open
+                    Messages</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MEDIA VIEWER MODAL -->
+    <div id="media-view-modal" class="modal" onclick="closeModal('media-view-modal')">
+        <div class="modal-content"
+            style="max-width: 800px; background: transparent; box-shadow: none; text-align: center;"
+            onclick="event.stopPropagation()">
+            <button class="close-btn" style="color: white; font-size: 30px; position: absolute; top: 20px; right: 20px;"
+                onclick="closeModal('media-view-modal')">&times;</button>
+            <div id="media-viewer-content"
+                style="width: 100%; height: auto; max-height: 80vh; display: flex; justify-content: center; align-items: center;">
+                <!-- Injected via JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- PARTICULAR ITEM MODAL -->
+    <div id="particularItemModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="particular-modal-title">Add Particular Record</h3>
+                <button class="close-btn" onclick="closeModal('particularItemModal')">&times;</button>
+            </div>
+            <form onsubmit="handleAddParticularItem(event)">
+                <input type="hidden" id="edit-particular-id">
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label>Item Name</label>
+                    <input type="text" id="p-item-name" class="form-control" placeholder="e.g. List of Experiments"
+                        required>
+                </div>
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label>Document (PDF)</label>
+                    <input type="file" id="p-item-file" class="form-control" accept=".pdf" required>
+                    <small id="p-file-help" style="color:#94a3b8; font-size:11px;">Required for new records.</small>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Save Record</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- INSIDE RECORD MODAL (NEW) -->
+    <div id="insideRecordModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="inside-modal-title">Add Inside Record</h3>
+                <button class="close-btn" onclick="closeModal('insideRecordModal')">&times;</button>
+            </div>
+            <form onsubmit="handleAddInsideRecord(event)">
+                <input type="hidden" id="edit-inside-id">
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label>Record Name</label>
+                    <input type="text" id="ins-item-name" class="form-control" placeholder="e.g. Maintenance Log"
+                        required>
+                </div>
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label>Document (PDF)</label>
+                    <input type="file" id="ins-item-file" class="form-control" accept=".pdf">
+                    <small id="ins-file-help" style="color:#94a3b8; font-size:11px;">Optional for update.</small>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Save Record</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- STOCK ITEM MODAL (NEW) -->
+    <div id="stockItemModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="stock-modal-title">Add Stock Entry</h3>
+                <button class="close-btn" onclick="closeModal('stockItemModal')">&times;</button>
+            </div>
+            <form onsubmit="handleAddStockItem(event)">
+                <input type="hidden" id="stock-id">
+                <div class="profile-grid">
+                    <div class="form-group"><label>Date</label><input type="date" id="stock-date" class="form-control"
+                            required></div>
+                    <div class="form-group"><label>Name of Article</label><input type="text" id="stock-article"
+                            class="form-control" required></div>
+                    <div class="form-group"><label>Particulars</label><input type="text" id="stock-particulars"
+                            class="form-control"></div>
+                    <div class="form-group"><label>Folio</label><input type="text" id="stock-folio"
+                            class="form-control"></div>
+                    <div class="form-group full-width"><label>Remarks</label><textarea id="stock-remarks"
+                            class="form-control"></textarea></div>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 15px;">Save Entry</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- REPAIR ITEM MODAL (UPDATED: FILE UPLOAD) -->
+    <div id="repairItemModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="repair-modal-title">Add Repair Item</h3>
+                <button class="close-btn" onclick="closeModal('repairItemModal')">&times;</button>
+            </div>
+            <form onsubmit="handleAddRepairItem(event)">
+                <input type="hidden" id="edit-repair-id">
+                <div class="profile-grid">
+                    <div class="form-group full-width"><label>Item Name</label><input type="text" id="rep-item-name"
+                            class="form-control" required></div>
+                    <div class="form-group"><label>Request No</label><input type="text" id="rep-request-no"
+                            class="form-control"></div>
+                    <div class="form-group"><label>Bill No</label><input type="text" id="rep-bill-no"
+                            class="form-control"></div>
+                    <div class="form-group"><label>Vendor Name</label><input type="text" id="rep-vendor"
+                            class="form-control" required></div>
+                    <div class="form-group"><label>Price</label><input type="number" id="rep-price" class="form-control"
+                            required></div>
+                    <div class="form-group"><label>Serial Number</label><input type="text" id="rep-serial"
+                            class="form-control"></div>
+                    <div class="form-group"><label>Date of Purchase</label><input type="date" id="rep-date"
+                            class="form-control" required></div>
+                    <div class="form-group"><label>Item Quantity</label><input type="number" id="rep-qty"
+                            class="form-control" value="1" required></div>
+
+                    <!-- NEW: FILE UPLOAD FIELD -->
+                    <div class="form-group full-width">
+                        <label>Attachment (PDF/Excel)</label>
+                        <input type="file" id="rep-file" class="form-control" accept=".pdf, .xls, .xlsx">
+                        <small style="color:#94a3b8;">Optional: Attach bill or warranty document.</small>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label>Under Warranty</label>
+                        <div class="warranty-group">
+                            <div type="button" class="warranty-btn active-yes" id="btn-warranty-yes"
+                                onclick="setWarranty(true)">Yes</div>
+                            <div type="button" class="warranty-btn" id="btn-warranty-no" onclick="setWarranty(false)">No
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 15px;"
+                    id="btn-save-repair">Add Item</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- LAB PHOTO MODAL -->
+    <div id="labPhotoModal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3>Upload Lab Media</h3>
+                <button class="close-btn" onclick="closeModal('labPhotoModal')">&times;</button>
+            </div>
+            <form onsubmit="handleLabPhotoUpload(event)">
+                <div class="form-group">
+                    <label>Caption (Description)</label>
+                    <input type="text" id="lab-photo-caption" class="form-control" placeholder="e.g. New Lathe Machine"
+                        required>
+                </div>
+                <div class="form-group" style="margin-top: 15px;">
+                    <label id="lab-photo-file-label">Photo or Video</label>
+                    <input type="file" id="lab-photo-file" class="form-control" accept="image/*,video/*" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 20px;">Upload
+                    Media</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="editInstructorModal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3>Edit Instructor Details</h3><button class="close-btn"
+                    onclick="closeModal('editInstructorModal')">&times;</button>
+            </div>
+            <form onsubmit="handleUpdateInstructor(event)"><input type="hidden" id="edit-instructor-lab-id">
+                <div class="form-group"><label>Lab Name</label><input type="text" id="edit-lab-name"
+                        class="form-control" disabled style="background: #f1f5f9;"></div>
+                <div class="form-group"><label>Employee ID</label><input type="text" id="edit-instructor-uid"
+                        class="form-control" required></div>
+                <div class="form-group"><label>Instructor Name</label><input type="text" id="edit-instructor-name"
+                        class="form-control" required></div>
+                <div class="form-group"><label>Designation</label><input type="text" id="edit-instructor-designation"
+                        class="form-control"></div><button type="submit" class="btn btn-primary"
+                    style="width: 100%">Update Details</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="noticeModal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3 id="notice-modal-title">Post Department Notice</h3><button class="close-btn"
+                    onclick="closeModal('noticeModal')">&times;</button>
+            </div>
+            <form onsubmit="handlePostNotice(event)"><input type="hidden" id="edit-notice-id">
+                <div class="form-group"><label>Message</label><textarea id="notice-message" class="form-control"
+                        rows="3" placeholder="Type your notice here..." required></textarea></div>
+                <div class="form-group"><label>Attachment (JPG/PDF)</label><input type="file" id="notice-file"
+                        class="form-control" accept="image/*, .pdf"><small
+                        style="color: #94a3b8; font-size: 11px;">Optional: Upload an image or PDF document.</small>
+                    <div id="notice-file-preview" style="margin-top: 8px;"></div>
+                </div><button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;"
+                    id="btn-save-notice">Post Notice</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- INVENTORY ITEM MODAL (UPDATED: MANDATORY FIELDS) -->
+    <div id="itemModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="item-modal-title">Add Inventory Item</h3><button class="close-btn"
+                    onclick="closeModal('itemModal')">&times;</button>
+            </div>
+            <form onsubmit="handleAddItem(event)">
+                <input type="hidden" id="item-id">
+                <div class="form-group" style="margin-top: 12px;"><label>Quantity</label><input type="number"
+                        id="itemQty" class="form-control" value="1" required></div>
+                <div class="form-group"><label>Name of Item</label><input type="text" id="itemName" class="form-control"
+                        required></div>
+                <!-- UPDATED: PO No is now Mandatory -->
+                <div class="form-group"><label>PO No</label><input type="text" id="itemPONo" class="form-control"
+                        required></div>
+                <!-- ADDED: Folio No -->
+                <div class="form-group"><label>Folio No</label><input type="text" id="itemFolioNo" class="form-control"
+                        required></div>
+                <div class="form-row" style="display:flex; gap:12px;">
+                    <div class="form-group" style="flex:1"><label>Bill Date</label><input type="date" id="itemDate"
+                            class="form-control" required></div>
+                    <div class="form-group" style="flex:1"><label>Bill No</label><input type="text" id="itemBillNo"
+                            class="form-control" required></div>
+                </div>
+                <div class="form-row" style="display:flex; gap:12px;">
+                    <div class="form-group" style="flex:1"><label>Amount</label><input type="number" id="itemAmount"
+                            class="form-control" required></div>
+                    <div class="form-group" style="flex:1"><label>Supplier Name</label><input type="text"
+                            id="itemSupplier" class="form-control" required></div>
+                </div>
+                <!-- UPDATED: Company is now Mandatory -->
+                <div class="form-group"><label>Company</label><input type="text" id="itemCompany" class="form-control"
+                        required></div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 20px; padding: 10px;">Save
+                    Item</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="resetPassModal" class="modal">
+        <div class="modal-content" style="max-width: 450px;">
+            <div class="modal-header">
+                <h3>Reset Password</h3><button class="close-btn" onclick="closeModal('resetPassModal')">&times;</button>
+            </div>
+            <form onsubmit="handlePasswordReset(event)">
+                <div class="form-group"><label>Current Password</label><input type="password" id="rp-current"
+                        class="form-control" required></div>
+                <div class="form-group"><label>New Password</label><input type="password" id="rp-new"
+                        class="form-control" required></div>
+                <div class="form-group"><label>Confirm New Password</label><input type="password" id="rp-confirm"
+                        class="form-control" required></div><button type="submit" class="btn btn-primary"
+                    style="width: 100%">Update Password</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="toast" class="toast">Action Successful</div>
+
+    <script src="assets/js/pages/autologin.js"></script>
+</body>
+
+</html>
